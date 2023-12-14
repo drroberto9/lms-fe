@@ -1,5 +1,5 @@
 import * as React from "react";
-import PropTypes from "prop-types";
+
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
@@ -15,27 +15,33 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
+import TableHead from "@mui/material/TableHead";
+import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
+import Tooltip from "@mui/material/Tooltip";
+
+import LeaveCreditModal from "./LeaveCreditModal";
 
 const UserTableNavigator = (props) => {
   const theme = useTheme();
-  const { count, page, rowsPerPage, onPageChange } = props;
+  const { count, page, rowsPerPage, setLink, data } = props;
 
-  console.log(page);
+  console.log(data);
 
-  const handleFirstPageButtonClick = (event) => {
-    onPageChange(event, 0);
+  console.log(rowsPerPage);
+  const handleFirstPageButtonClick = () => {
+    setLink(`${data.first_page_url}&per_page=${rowsPerPage}`);
   };
 
-  const handleBackButtonClick = (event) => {
-    onPageChange(event, page - 1);
+  const handleBackButtonClick = () => {
+    setLink(`${data.prev_page_url}&per_page=${rowsPerPage}`);
   };
 
-  const handleNextButtonClick = (event) => {
-    onPageChange(event, page + 1);
+  const handleNextButtonClick = () => {
+    setLink(`${data.next_page_url}&per_page=${rowsPerPage}`);
   };
 
-  const handleLastPageButtonClick = (event) => {
-    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+  const handleLastPageButtonClick = () => {
+    setLink(`${data.last_page_url}&per_page=${rowsPerPage}`);
   };
 
   return (
@@ -80,45 +86,58 @@ const UserTableNavigator = (props) => {
   );
 };
 
-// UserTableNavigator.propTypes = {
-//   count: PropTypes.number.isRequired,
-//   onPageChange: PropTypes.func.isRequired,
-//   page: PropTypes.number.isRequired,
-//   rowsPerPage: PropTypes.number.isRequired,
-// };
-
 const UserTable = ({ data, setPerPage, setLink }) => {
-  const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(data?.per_page);
+  const [currentEmployee, setCurrentEmployee] = React.useState();
+  const [recordsModalOpen, setRecordsModalOpen] = React.useState(false);
 
-  // Avoid a layout jump when reaching the last page with empty rows.
+  const page = data ? data?.current_page - 1 : 0;
+
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - data?.total) : 0;
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setLink(`${data.first_page_url}&per_page=${event.target.value}`);
   };
 
   return (
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
+        <TableHead>
+          <TableRow sx={{ backgroundColor: "#1976D24D" }}>
+            <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Department</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Position</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Date Employed</TableCell>
+            <TableCell sx={{ fontWeight: 700 }} align="center">
+              Actions
+            </TableCell>
+          </TableRow>
+        </TableHead>
         <TableBody>
           {data?.data.map((row) => (
             <TableRow key={row.employee_id}>
               <TableCell component="th" scope="row">
-                {row.first_name}
+                {row.first_name} {row.last_name}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
-                {row.last_name}
-              </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
-                {row.email}
+              <TableCell>{row.email}</TableCell>
+              <TableCell>{row.departments[0].department_name}</TableCell>
+              <TableCell>{row.departments[0].job_title}</TableCell>
+              <TableCell>{row.departments[0].employment_status}</TableCell>
+              <TableCell>{row.departments[0].date_of_employment}</TableCell>
+              <TableCell align="center">
+                <Tooltip title="Leave Credits" placement="left">
+                  <WorkHistoryIcon
+                    onClick={() => {
+                      setCurrentEmployee(row);
+                      setRecordsModalOpen(true);
+                    }}
+                  />
+                </Tooltip>
               </TableCell>
             </TableRow>
           ))}
@@ -132,7 +151,6 @@ const UserTable = ({ data, setPerPage, setLink }) => {
           <TableRow>
             <TablePagination
               rowsPerPageOptions={[20, 50, 100]}
-              colSpan={3}
               count={data.total}
               rowsPerPage={rowsPerPage}
               page={page}
@@ -142,13 +160,24 @@ const UserTable = ({ data, setPerPage, setLink }) => {
                 },
                 native: true,
               }}
-              onPageChange={handleChangePage}
+              // onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              ActionsComponent={UserTableNavigator}
+              ActionsComponent={(subProps) => (
+                <UserTableNavigator
+                  {...subProps}
+                  data={data}
+                  setLink={setLink}
+                />
+              )}
             />
           </TableRow>
         </TableFooter>
       </Table>
+      <LeaveCreditModal
+        open={recordsModalOpen}
+        setOpen={setRecordsModalOpen}
+        data={currentEmployee}
+      />
     </TableContainer>
   );
 };

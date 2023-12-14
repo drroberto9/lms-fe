@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 
 import Container from "@mui/material/Container";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
 
 import axios from "../api/api";
 import Header from "../components/Header";
@@ -40,6 +44,17 @@ const Employees = () => {
     <div>
       <Header />
       <Container maxWidth="xl" sx={{ marginTop: "100px" }}>
+        <Box sx={{ flexGrow: 1, marginBottom: "20px" }}>
+          <Grid container spacing={3}>
+            <Grid item xs={6} align="left">
+              <Typography variant="h5">LIST OF EMPLOYEES</Typography>
+            </Grid>
+            <Grid item xs={6} align="right">
+              <Button variant="contained">ADD EMPLOYEE</Button>
+            </Grid>
+          </Grid>
+        </Box>
+
         {!loading && (
           <UserTable
             data={employees}
